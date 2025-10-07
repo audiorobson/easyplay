@@ -1,0 +1,392 @@
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>easyplay</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+
+    <script type="importmap">
+    {
+        "imports": {
+            "bootstrap": "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.esm.min.js",
+            "@popperjs/core": "https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/esm/popper.min.js",
+            "animejs": "https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.es.js",
+            "pdfjs-dist/build/pdf": "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.mjs",
+            "pdfjs-dist/build/pdf.worker.mjs": "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.worker.mjs"
+        }
+    }
+    </script>
+</head>
+<body>
+
+    <!-- Global Overlays -->
+    <div id="corner-clock" class="global-overlay"></div>
+    <div id="weather-display" class="global-overlay"></div>
+    <div id="rss-ticker-wrapper" class="global-overlay">
+        <div id="rss-ticker-content"></div>
+    </div>
+
+    <!-- Main viewer for media content -->
+    <div id="viewer">
+        <div id="progress-bar"></div>
+        <div id="watermark-container"></div>
+    </div>
+
+    <!-- Editor Panel, hidden by default -->
+    <div id="editor-panel" class="d-none">
+        <div class="panel-header">
+            <h3>easyplay Editor</h3>
+            <div id="playlist-controls">
+                <button id="play-btn" class="btn btn-icon" title="Iniciar Reprodução (Ctrl+Espaço para Iniciar/Parar)"></button>
+                <button id="relink-files-btn" class="btn btn-icon" title="Localizar Mídia Faltante" style="display: none;"></button>
+                <button id="playlist-management-btn" class="btn btn-icon" title="Gerenciar Playlists (Ctrl+P)"></button>
+                <button id="global-settings-btn" class="btn btn-icon" title="Configurações Globais (RSS, Relógio, etc.)"></button>
+                <button id="logo-btn" class="btn btn-icon" title="Adicionar Logo/Marca d'água"></button>
+                <input type="file" id="logo-file-input" style="display: none;" accept="image/png">
+                <button id="remove-logo-btn" class="btn btn-icon" title="Remover Logo" style="display: none;"></button>
+                <button id="import-btn" class="btn btn-icon" title="Importar Playlist (.json)"></button>
+                <input type="file" id="import-file-input" style="display: none;" accept=".json">
+                <button id="export-btn" class="btn btn-icon" title="Exportar Playlist (.json)"></button>
+                <button id="clear-playlist-btn" class="btn btn-icon" title="Limpar Playlist Atual"></button>
+            </div>
+        </div>
+        <div class="panel-content">
+            <div id="source-library">
+                <h5>Adicionar Mídia</h5>
+                <div class="add-buttons">
+                    <button id="add-image-btn" class="btn btn-add" data-bs-toggle="tooltip" title="Adicionar Imagem"></button>
+                    <input type="file" id="image-file-input" style="display: none;" accept="image/*" multiple>
+                    
+                    <button id="add-video-btn" class="btn btn-add" data-bs-toggle="tooltip" title="Adicionar Vídeo"></button>
+                    <input type="file" id="video-file-input" style="display: none;" accept="video/*" multiple>
+
+                    <button id="add-audio-btn" class="btn btn-add" data-bs-toggle="tooltip" title="Adicionar Áudio"></button>
+                    <input type="file" id="audio-file-input" style="display: none;" accept="audio/*" multiple>
+
+                    <button id="add-web-btn" class="btn btn-add" data-bs-toggle="tooltip" title="Adicionar Página Web"></button>
+                    
+                    <button id="add-youtube-btn" class="btn btn-add" data-bs-toggle="tooltip" title="Adicionar Vídeo do YouTube"></button>
+
+                    <button id="add-html-btn" class="btn btn-add" data-bs-toggle="tooltip" title="Adicionar arquivo HTML"></button>
+                    <input type="file" id="html-file-input" style="display: none;" accept=".html,.htm" multiple>
+
+                    <button id="add-pdf-btn" class="btn btn-add" data-bs-toggle="tooltip" title="Adicionar PDF"></button>
+                    <input type="file" id="pdf-file-input" style="display: none;" accept=".pdf" multiple>
+
+                    <button id="add-markdown-btn" class="btn btn-add" data-bs-toggle="tooltip" title="Adicionar Markdown"></button>
+                    <input type="file" id="markdown-file-input" style="display: none;" accept=".md,.markdown" multiple>
+                    
+                    <button id="add-text-btn" class="btn btn-add" data-bs-toggle="tooltip" title="Adicionar Texto Animado"></button>
+
+                    <button id="add-clock-btn" class="btn btn-add" data-bs-toggle="tooltip" title="Adicionar Relógio Digital"></button>
+
+                    <button id="add-weather-forecast-btn" class="btn btn-add" data-bs-toggle="tooltip" title="Adicionar Previsão do Tempo"></button>
+
+                    <button id="add-mosaic-btn" class="btn btn-add" data-bs-toggle="tooltip" title="Adicionar Mosaico de Mídias"></button>
+                </div>
+            </div>
+            <div id="playlist-editor">
+                <h5>Linha do Tempo</h5>
+                <div id="timeline">
+                    <!-- Playlist items will be rendered here by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructions Modal -->
+    <div class="modal fade" id="instructions-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Bem-vindo ao easyplay!</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Esta é uma aplicação de sinalização digital para exibir seus conteúdos em tela cheia.</p>
+                    <strong>Atalhos do Teclado:</strong>
+                    <ul>
+                        <li><code>Ctrl + M</code>: Mostrar/Ocultar o painel de edição.</li>
+                        <li><code>Ctrl + P</code>: Abrir gerenciador de playlists.</li>
+                        <li><code>Esc</code>: Parar a reprodução e mostrar o painel.</li>
+                        <li><code>Ctrl + Barra de Espaço</code>: Iniciar/Parar reprodução.</li>
+                    </ul>
+                    <strong>Como começar:</strong>
+                    <ol>
+                        <li>Pressione <code>Ctrl + M</code> para abrir o painel de edição.</li>
+                        <li>Use os botões na seção "Adicionar Mídia" para criar sua playlist.</li>
+                        <li>Organize os itens na "Linha do Tempo".</li>
+                        <li>Clique no botão de play para iniciar a exibição.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Missing Files Modal -->
+    <div class="modal fade" id="missing-files-modal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Arquivos de Mídia Faltando</h5>
+                </div>
+                <div class="modal-body">
+                    <p>Alguns arquivos da sua playlist não foram encontrados. Por favor, localize-os para restaurar a playlist ou pule para iniciar a reprodução com a mídia disponível.</p>
+                    <div id="missing-files-list" class="list-group mb-3" style="max-height: 40vh; overflow-y: auto;">
+                        <!-- Missing files will be listed here by JS -->
+                    </div>
+                    <input type="file" id="missing-file-input" style="display: none;">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="skip-missing-files-btn">Pular e Reproduzir</button>
+                    <button type="button" class="btn btn-primary" id="continue-from-missing-files-btn" disabled>Continuar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generic Modal for inputs -->
+    <div class="modal fade" id="input-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="input-modal-title">Adicionar Conteúdo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="input-modal-body">
+                    <!-- Content is dynamically inserted here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="input-modal-save-btn">Adicionar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Modal -->
+    <div class="modal fade" id="notification-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="notification-modal-title">Notificação</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="notification-modal-body">
+                    <!-- Notification content -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal fade" id="confirmation-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmation-modal-title">Confirmação</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="confirmation-modal-body">
+                    <!-- Confirmation content -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" id="confirmation-modal-confirm-btn">Confirmar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Playlist Management Modal -->
+    <div class="modal fade" id="playlist-management-modal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Gerenciar Playlists</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6>Ações</h6>
+                            <div class="d-grid gap-2">
+                                <button id="new-playlist-btn" class="btn btn-primary">Nova Playlist</button>
+                                <button id="save-playlist-btn" class="btn btn-outline-primary">Salvar Playlist Atual</button>
+                                <button id="load-playlist-btn" class="btn btn-outline-secondary">Carregar de Arquivo</button>
+                                <input type="file" id="load-playlist-input" style="display: none;" accept=".json">
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <h6>Playlists Salvas</h6>
+                            <div id="saved-playlists-list" class="list-group">
+                                <!-- Saved playlists will be listed here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Settings Modal -->
+    <div class="modal fade" id="global-settings-modal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Configurações Globais</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Nav tabs -->
+                    <ul class="nav nav-tabs" id="settings-tabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="clock-tab" data-bs-toggle="tab" data-bs-target="#clock-settings" type="button" role="tab">Relógio</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="weather-tab" data-bs-toggle="tab" data-bs-target="#weather-settings" type="button" role="tab">Previsão do Tempo</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="rss-tab" data-bs-toggle="tab" data-bs-target="#rss-settings" type="button" role="tab">Feed RSS</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="logo-tab" data-bs-toggle="tab" data-bs-target="#logo-settings" type="button" role="tab">Logo</button>
+                        </li>
+                    </ul>
+
+                    <!-- Tab panes -->
+                    <div class="tab-content" id="settings-tabs-content">
+                        <div class="tab-pane fade show active p-3" id="clock-settings" role="tabpanel">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" role="switch" id="setting-clock-enabled">
+                                <label class="form-check-label" for="setting-clock-enabled">Exibir relógio global na tela</label>
+                            </div>
+                            <div id="clock-options" class="d-none">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="setting-clock-position" class="form-label">Posição</label>
+                                        <select class="form-select" id="setting-clock-position">
+                                            <option value="top-right">Canto Superior Direito</option>
+                                            <option value="top-left">Canto Superior Esquerdo</option>
+                                            <option value="bottom-right">Canto Inferior Direito</option>
+                                            <option value="bottom-left">Canto Inferior Esquerdo</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="setting-clock-format" class="form-label">Formato</label>
+                                        <select class="form-select" id="setting-clock-format">
+                                            <option value="24h">24 Horas (HH:MM)</option>
+                                            <option value="24h-seconds">24 Horas com Segundos (HH:MM:SS)</option>
+                                            <option value="12h">12 Horas (HH:MM AM/PM)</option>
+                                            <option value="12h-seconds">12 Horas com Segundos (HH:MM:SS AM/PM)</option>
+                                            <option value="date-short">Data Curta</option>
+                                            <option value="date-long">Data Longa</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="setting-clock-size" class="form-label">Tamanho da Fonte (CSS)</label>
+                                        <input type="text" class="form-control" id="setting-clock-size" placeholder="ex: 2.5vw">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="setting-clock-color" class="form-label">Cor da Fonte</label>
+                                        <input type="color" class="form-control form-control-color" id="setting-clock-color">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade p-3" id="weather-settings" role="tabpanel">
+                             <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" role="switch" id="setting-weather-enabled">
+                                <label class="form-check-label" for="setting-weather-enabled">Exibir previsão do tempo global</label>
+                            </div>
+                            <div id="weather-options" class="d-none">
+                                <div class="row">
+                                    <div class="col-md-12 mb-3">
+                                        <label for="setting-weather-location" class="form-label">Localização (ex: "São Paulo")</label>
+                                        <input type="text" class="form-control" id="setting-weather-location" placeholder="Cidade">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="setting-weather-units" class="form-label">Unidades</label>
+                                        <select class="form-select" id="setting-weather-units">
+                                            <option value="celsius">Celsius (°C)</option>
+                                            <option value="fahrenheit">Fahrenheit (°F)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="setting-weather-position" class="form-label">Posição</label>
+                                        <select class="form-select" id="setting-weather-position">
+                                            <option value="top-left">Canto Superior Esquerdo</option>
+                                            <option value="top-right">Canto Superior Direito</option>
+                                            <option value="bottom-left">Canto Inferior Esquerdo</option>
+                                            <option value="bottom-right">Canto Inferior Direito</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade p-3" id="rss-settings" role="tabpanel">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" role="switch" id="setting-rss-enabled">
+                                <label class="form-check-label" for="setting-rss-enabled">Exibir feed de notícias RSS</label>
+                            </div>
+                             <div id="rss-options" class="d-none">
+                                <div class="mb-3">
+                                    <label for="setting-rss-url" class="form-label">URL do Feed RSS</label>
+                                    <input type="url" class="form-control" id="setting-rss-url" placeholder="https://exemplo.com/feed.xml">
+                                     <div class="form-text">Pode não funcionar com todos os feeds devido a restrições de CORS. Use um proxy se necessário.</div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="setting-rss-position" class="form-label">Posição</label>
+                                        <select class="form-select" id="setting-rss-position">
+                                            <option value="bottom">Rodapé</option>
+                                            <option value="top">Cabeçalho</option>
+                                        </select>
+                                    </div>
+                                     <div class="col-md-6 mb-3">
+                                        <label for="setting-rss-speed" class="form-label">Velocidade: <span id="rss-speed-value">100 px/s</span></label>
+                                        <input type="range" class="form-range" id="setting-rss-speed" min="20" max="300" step="10" value="100" onchange="document.getElementById('rss-speed-value').textContent = this.value + ' px/s'">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="setting-rss-bgcolor" class="form-label">Cor de Fundo</label>
+                                        <input type="color" class="form-control form-control-color" id="setting-rss-bgcolor" value="#000000">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="setting-rss-color" class="form-label">Cor do Texto</label>
+                                        <input type="color" class="form-control form-control-color" id="setting-rss-color" value="#FFFFFF">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade p-3" id="logo-settings" role="tabpanel">
+                            <div class="mb-3">
+                                <label for="setting-logo-position" class="form-label">Posição da Logo na Tela</label>
+                                <select class="form-select" id="setting-logo-position">
+                                    <option value="top-right">Canto Superior Direito</option>
+                                    <option value="top-left">Canto Superior Esquerdo</option>
+                                    <option value="bottom-right">Canto Inferior Direito</option>
+                                    <option value="bottom-left">Canto Inferior Esquerdo</option>
+                                </select>
+                                <div id="logo-settings-form-text" class="form-text">A logo pode ser adicionada/removida usando os botões na barra de ferramentas principal do editor.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                 <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="global-settings-save-btn">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="main.js"></script>
+</body>
+</html>

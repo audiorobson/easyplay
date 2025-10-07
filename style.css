@@ -1,0 +1,573 @@
+:root {
+    --graphite: #282c34;
+    --cyan: #00bcd4;
+    --light-graphite: #3a3f4b;
+    --text-color: #f0f0f0;
+    --dark-bg: #1a1a1a;
+}
+
+body, html {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: var(--dark-bg);
+    color: var(--text-color);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+#viewer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #000;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#progress-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0%;
+    height: 4px;
+    background-color: var(--cyan);
+    z-index: 2; /* Above viewer content */
+    transition: width 0.1s linear; /* For smooth video time updates */
+    display: none; /* Hidden by default */
+}
+
+#viewer > * {
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0;
+}
+
+#viewer .display-native {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+#viewer .display-stretch {
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
+}
+
+#viewer .display-zoom {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+#viewer .display-contain {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+#watermark-container {
+    position: absolute;
+    z-index: 51;
+    max-width: 150px;
+    max-height: 150px;
+    opacity: 0.8;
+    pointer-events: none;
+}
+
+#watermark-container img {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+}
+
+.caption-overlay {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 1200px;
+    text-align: center;
+    padding: 10px 20px;
+    background-color: transparent;
+    color: white;
+    font-size: 1.5vw;
+    z-index: 5;
+    pointer-events: none;
+    border-radius: 8px;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+}
+
+#editor-panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 45vh;
+    background: rgba(20, 20, 22, 0.85);
+    backdrop-filter: blur(15px) saturate(180%);
+    -webkit-backdrop-filter: blur(15px) saturate(180%);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.3s ease-in-out;
+    padding: 1rem 2rem;
+}
+
+#editor-panel.d-none {
+    transform: translateY(100%);
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-shrink: 0;
+}
+
+.panel-header h3 {
+    margin: 0;
+    font-weight: 600;
+    color: var(--cyan);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.editor-logo {
+    height: 28px;
+    width: auto;
+}
+
+.panel-content {
+    display: flex;
+    flex-grow: 1;
+    gap: 2rem;
+    overflow: hidden;
+}
+
+#source-library {
+    flex-basis: 250px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+#source-library h5, #playlist-editor h5 {
+    margin-bottom: 1rem;
+    color: var(--text-color);
+    border-bottom: 1px solid var(--light-graphite);
+    padding-bottom: 0.5rem;
+}
+
+.add-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+    gap: 0.75rem;
+}
+
+.btn-add {
+    background-color: var(--graphite);
+    border: 1px solid var(--light-graphite);
+    color: var(--cyan);
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    transition: all 0.2s ease;
+}
+
+.btn-add:hover {
+    background-color: var(--light-graphite);
+    border-color: var(--cyan);
+    color: white;
+}
+
+#playlist-editor {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+#timeline {
+    background-color: rgba(0,0,0,0.3);
+    border-radius: 8px;
+    padding: 0.5rem;
+    overflow-y: auto;
+    flex-grow: 1;
+    min-height: 0;
+}
+
+#timeline::-webkit-scrollbar {
+    width: 8px;
+}
+#timeline::-webkit-scrollbar-track {
+    background: transparent;
+}
+#timeline::-webkit-scrollbar-thumb {
+    background: var(--light-graphite);
+    border-radius: 4px;
+}
+#timeline::-webkit-scrollbar-thumb:hover {
+    background: var(--cyan);
+}
+
+
+.timeline-item {
+    background-color: var(--graphite);
+    border: 1px solid var(--light-graphite);
+    border-left: 5px solid var(--cyan);
+    padding: 0.5rem 1rem;
+    margin-bottom: 0.5rem;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.timeline-item:hover {
+    background-color: var(--light-graphite);
+}
+
+.timeline-item .item-icon {
+    font-size: 20px;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    color: var(--cyan);
+}
+
+.timeline-item .item-name {
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.timeline-item .item-controls {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.item-controls button {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    opacity: 0.7;
+    transition: opacity 0.2s, color 0.2s;
+}
+.item-controls button:hover {
+    opacity: 1;
+    color: var(--cyan);
+}
+.item-controls .delete-item-btn:hover {
+    color: #ff4d4d;
+}
+
+.btn-icon {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-size: 24px;
+    padding: 0.5rem;
+    transition: color 0.2s ease;
+}
+.btn-icon:hover {
+    color: var(--cyan);
+}
+
+/* Modal styles */
+.modal-content {
+    background-color: var(--graphite);
+    color: var(--text-color);
+    border: 1px solid var(--light-graphite);
+}
+.modal-header {
+    border-bottom-color: var(--light-graphite);
+}
+.modal-footer {
+    border-top-color: var(--light-graphite);
+}
+.btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+.form-control, .form-select {
+    background-color: var(--light-graphite);
+    border-color: var(--graphite);
+    color: var(--text-color);
+}
+.form-control:focus, .form-select:focus {
+    background-color: var(--light-graphite);
+    border-color: var(--cyan);
+    color: var(--text-color);
+    box-shadow: 0 0 0 0.25rem rgba(0, 188, 212, 0.25);
+}
+.btn-primary {
+    background-color: var(--cyan);
+    border-color: var(--cyan);
+    color: var(--graphite);
+    font-weight: bold;
+}
+.btn-primary:hover {
+    filter: brightness(1.1);
+    background-color: var(--cyan);
+    border-color: var(--cyan);
+}
+
+/* Notification modal styles */
+.notification-success .modal-header {
+    background-color: #28a745;
+    color: white;
+}
+.notification-warning .modal-header {
+    background-color: #ffc107;
+    color: black;
+}
+.notification-error .modal-header {
+    background-color: #dc3545;
+    color: white;
+}
+.notification-info .modal-header {
+    background-color: var(--cyan);
+    color: var(--graphite);
+}
+
+/* Form range styling */
+.form-range::-webkit-slider-thumb {
+    background-color: var(--cyan);
+}
+.form-range::-moz-range-thumb {
+    background-color: var(--cyan);
+    border: none;
+}
+
+/* Tooltip */
+.tooltip-inner {
+    background-color: var(--cyan);
+    color: var(--graphite);
+    font-weight: bold;
+}
+.tooltip.bs-tooltip-top .tooltip-arrow::before {
+    border-top-color: var(--cyan);
+}
+.tooltip.bs-tooltip-bottom .tooltip-arrow::before {
+    border-bottom-color: var(--cyan);
+}
+.tooltip.bs-tooltip-start .tooltip-arrow::before {
+    border-left-color: var(--cyan);
+}
+.tooltip.bs-tooltip-end .tooltip-arrow::before {
+    border-right-color: var(--cyan);
+}
+
+/* Audio Visualization & Captions */
+.audio-visualization-bg {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: linear-gradient(45deg, #0f0c29, #302b63, #24243e);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+}
+
+@keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.audio-viz-content {
+    z-index: 2;
+    position: relative;
+}
+
+.viz-bars {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 4px;
+    z-index: 1;
+    filter: blur(1px) opacity(0.6);
+}
+
+.viz-bar {
+    width: 12px;
+    background: var(--cyan);
+    animation: viz-bar-dance 1.8s ease-in-out infinite alternate;
+}
+
+@keyframes viz-bar-dance {
+    from {
+        height: 5px;
+    }
+    to {
+        height: 100%;
+    }
+}
+
+.caption-overlay.audio-caption {
+    bottom: 120px; /* Position above the viz bars */
+}
+
+
+/* Mosaic Styles */
+.mosaic-container {
+    gap: 4px; /* A little spacing between panes */
+    background-color: #000;
+}
+.mosaic-pane {
+    background-color: #111;
+    position: relative; /* Crucial for positioning media inside */
+    overflow: hidden;
+}
+.mosaic-pane > * { /* Target the media element inside */
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 1 !important; /* Override transition opacity */
+    transform: none !important; /* Override transition transform */
+}
+
+/* Global Overlays */
+.global-overlay {
+    position: fixed;
+    z-index: 50; /* Above viewer, below editor panel */
+    color: white;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.global-overlay.visible {
+    opacity: 1;
+}
+
+#corner-clock {
+    top: 20px;
+    right: 20px;
+    font-size: 2.5vw;
+    font-weight: bold;
+}
+
+#weather-display {
+    top: 20px;
+    left: 20px;
+    font-size: 1.8vw;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+#weather-display .weather-icon {
+    font-size: 3vw;
+}
+
+#rss-ticker-wrapper {
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    padding: 10px 0;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+#rss-ticker-content {
+    display: inline-block;
+    padding-left: 100%; /* Start off-screen */
+    animation: rss-scroll 60s linear infinite; /* Animation duration will be set by JS */
+}
+
+@keyframes rss-scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-100%); }
+}
+
+.weather-forecast-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    box-sizing: border-box;
+    background: linear-gradient(to bottom, #2c3e50, #4ca1af);
+    color: white;
+}
+.weather-forecast-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+.weather-forecast-header h2 {
+    font-size: 3vw;
+    margin: 0;
+}
+.weather-forecast-header p {
+    font-size: 1.5vw;
+    opacity: 0.8;
+}
+.weather-forecast-days {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    width: 100%;
+    max-width: 1200px;
+}
+.weather-forecast-day {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 1rem;
+    text-align: center;
+    flex: 1;
+    min-width: 150px;
+}
+.weather-forecast-day h4 {
+    font-size: 1.2vw;
+    margin-bottom: 0.5rem;
+}
+.weather-forecast-day .forecast-icon {
+    font-size: 4vw;
+    line-height: 1;
+    margin: 0.5rem 0;
+}
+.weather-forecast-day .forecast-temps {
+    font-size: 1.4vw;
+}
+.weather-forecast-day .forecast-temps .high {
+    font-weight: bold;
+}
+.weather-forecast-day .forecast-temps .low {
+    opacity: 0.7;
+}
+
+                                         <label for="setting-rss-speed" class="form-label">Velocidade: <span id="rss-speed-value">100 px/s</span></label>
+                                         <input type="range" class="form-range" id="setting-rss-speed" min="20" max="300" step="10" value="100" oninput="document.getElementById('rss-speed-value').textContent = this.value + ' px/s'">
+                                     </div>
+                                 </div>
+                                 <div class="row">
